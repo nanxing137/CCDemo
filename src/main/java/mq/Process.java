@@ -8,15 +8,17 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 接受任务，分发任务
  */
 public class Process{
-	// 这里可以重写优先级队列
-	PriorityQueue<TaskQueue> priorityQueue = new PriorityQueue<>();
 
+	// 总队列
 	Queue<Task> queue = new LinkedBlockingDeque<>();
 
 	// 暂时没啥用
@@ -33,9 +35,8 @@ public class Process{
 	 */
 	public void addConsumer(Consumer<Task> consumer){
 		// 连一个消费者，自动加一个为此消费者增加的队列
-		TaskQueue<Task> taskQueue = new TaskQueue<>();
-		priorityQueue.add(taskQueue);
-		Handler handler = new Handler(taskQueue,priorityQueue,consumer);
+
+		Handler handler = new Handler(queue,consumer);
 		// handler.start();
 
 		handlers.add(handler);
@@ -53,16 +54,17 @@ public class Process{
 	 */
 	public<T extends Task> void addTask(T t){
 
-
+		AtomicReference atomicReference = new AtomicReference();
+		boolean b = atomicReference.compareAndSet(null, 1l);
+		Object o = atomicReference.get();
+		ConcurrentLinkedQueue<Object> objects = new ConcurrentLinkedQueue<>();
+		objects.add(null);
 //		queue.add(t);
 
 
-		TaskQueue remove = priorityQueue.remove();
-		synchronized (remove){
-			remove.add(t);
-			priorityQueue.add(remove);
-			System.out.println();
-			remove.notifyAll();
+		synchronized (queue){
+			queue.offer(t);
+			queue.notifyAll();
 		}
 
 	}

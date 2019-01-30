@@ -4,17 +4,16 @@ import bean.Task;
 import consumer.Consumer;
 
 import java.util.PriorityQueue;
+import java.util.Queue;
 
 
 public class Handler {
 
-	TaskQueue<Task> taskQueue;
-	PriorityQueue<TaskQueue> priorityQueue;
+	Queue<Task> queue;
 	Consumer consumer;
 
-	public Handler(TaskQueue<Task> taskQueue, PriorityQueue<TaskQueue> priorityQueue, Consumer consumer) {
-		this.taskQueue = taskQueue;
-		this.priorityQueue = priorityQueue;
+	public Handler(Queue<Task> queue, Consumer consumer) {
+		this.queue = queue;
 		this.consumer = consumer;
 		// 直接启动
 		handler();
@@ -24,15 +23,17 @@ public class Handler {
 	// 未实现
 	public void handler() {
 		while (true) {
-			Task task = taskQueue.remove();
-			synchronized (taskQueue) {
-				while (null == task) {
-					try {
-						taskQueue.wait();
-					} catch (InterruptedException e) {
-						e.printStackTrace();
+			Task task = queue.poll();
+			if (null==task) {
+				synchronized (queue) {
+					while (null == task) {
+						try {
+							queue.wait();
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+						task = queue.poll();
 					}
-					task = taskQueue.remove();
 				}
 			}
 
